@@ -1,17 +1,12 @@
 {
-  "name": "labelguard-ai-backend",
+  "name": "labelguard-ai",
   "version": "1.0.0",
-  "description": "Backend for LabelGuard AI",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
-  },
+  "private": true,
   "dependencies": {
     "cors": "^2.8.6",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "multer": "^2.2.0",
-    "sharp": "^0.34.3",
-    "tesseract.js": "^6.0.1"
+    "sharp": "^0.35.4",
+    "tesseract.js": "^7.0.0"
   }
 }
