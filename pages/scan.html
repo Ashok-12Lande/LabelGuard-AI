@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+```
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>Scan Product - LabelGuard AI</title>
+
+<link
+    rel="stylesheet"
+    href="../style.css"
+>
+```
+
+</head>
+
+<body>
+
+```
+<!-- ================= NAVIGATION ================= -->
+
+<header class="navbar">
+
+    <div class="logo">
+        🛡️ LabelGuard <span>AI</span>
+    </div>
+
+    <nav>
+        <a href="../index.html">Home</a>
+        <a href="scan.html">Scan</a>
+    </nav>
+
+</header>
+
+
+<!-- ================= MAIN ================= -->
+
+<main class="scan-page">
+
+    <div class="scan-container">
+
+        <p class="tag">
+            PRODUCT INSPECTION
+        </p>
+
+        <h1>
+            Scan Your <span>Product</span>
+        </h1>
+
+        <p class="scan-description">
+            Use your camera or upload a product image
+            to inspect its label.
+        </p>
+
+
+        <!-- ================= CAMERA ================= -->
+
+        <div class="camera-box">
+
+            <video
+                id="camera"
+                autoplay
+                muted
+                playsinline
+            ></video>
+
+            <canvas
+                id="canvas"
+                style="display:none;"
+            ></canvas>
+
+
+            <div class="camera-buttons">
+
+                <button
+                    type="button"
+                    class="primary-btn"
+                    id="startCameraBtn"
+                    onclick="startCamera()"
+                >
+                    📷 Start Camera
+                </button>
+
+                <button
+                    type="button"
+                    class="capture-btn"
+                    id="takePhotoBtn"
+                    onclick="takePhoto()"
+                >
+                    📸 Take Photo
+                </button>
+
+                <button
+                    type="button"
+                    class="stop-btn"
+                    id="stopCameraBtn"
+                    onclick="stopCamera()"
+                >
+                    ⛔ Stop
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================= OR ================= -->
+
+        <div class="or-text">
+            OR
+        </div>
+
+
+        <!-- ================= UPLOAD ================= -->
+
+        <div class="upload-box">
+
+            <div class="upload-icon">
+                📁
+            </div>
+
+            <h2>
+                Upload Product Image
+            </h2>
+
+            <p>
+                JPG, PNG or WEBP
+            </p>
+
+            <input
+                type="file"
+                id="productImage"
+                accept="image/jpeg,image/png,image/webp,image/*"
+                onchange="previewImage(event)"
+                hidden
+            >
+
+            <label
+                for="productImage"
+                class="upload-btn"
+            >
+                📁 Choose Image
+            </label>
+
+        </div>
+
+
+        <!-- ================= PREVIEW ================= -->
+
+        <div
+            id="preview-container"
+            class="preview-container"
+            style="display:none;"
+        >
+
+            <h2>
+                🖼️ Image Preview
+            </h2>
+
+            <img
+                id="preview"
+                src=""
+                alt="Product Preview"
+            >
+
+
+            <!-- ================= ANALYZE ================= -->
+
+            <button
+                type="button"
+                class="primary-btn"
+                onclick="analyzeProduct()"
+            >
+                🔍 Analyze Product
+            </button>
+
+
+            <!-- ================= RESULTS ================= -->
+
+            <div
+                id="ocrResult"
+                class="ocr-result"
+            >
+
+                <!-- PRODUCT INFORMATION -->
+
+                <h3>
+                    📦 Product Information
+                </h3>
+
+                <div id="productInfo">
+
+                    <p>
+                        <strong>Category:</strong>
+                        <span>Not detected</span>
+                    </p>
+
+                    <p>
+                        <strong>Product Name:</strong>
+                        <span>Not detected</span>
+                    </p>
+
+                    <p>
+                        <strong>MRP:</strong>
+                        <span>Not detected</span>
+                    </p>
+
+                    <p>
+                        <strong>Net Quantity:</strong>
+                        <span>Not detected</span>
+                    </p>
+
+                    <p>
+                        <strong>Best Before:</strong>
+                        <span>Not detected</span>
+                    </p>
+
+                    <p>
+                        <strong>Batch Number:</strong>
+                        <span>Not detected</span>
+                    </p>
+
+                    <p>
+                        <strong>FSSAI:</strong>
+                        <span>Not detected</span>
+                    </p>
+
+                    <p>
+                        <strong>Manufacturer:</strong>
+                        <span>Not detected</span>
+                    </p>
+
+                </div>
+
+
+                <!-- COMPLIANCE -->
+
+                <div
+                    id="complianceResult"
+                    class="compliance-result"
+                >
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+<!-- ================= FOOTER ================= -->
+
+<footer>
+
+    <p>
+        © 2026 LabelGuard AI | SIH Project
+    </p>
+
+</footer>
+
+
+<!-- ================= JAVASCRIPT ================= -->
+
+<script src="../script.js"></script>
+```
+
+</body>
+
+</html>
