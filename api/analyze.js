@@ -14,12 +14,12 @@ const upload = multer({
     storage: multer.memoryStorage()
 });
 
-// Test route
+// GET test
 app.get("/", (req, res) => {
-    res.send("LabelGuard AI Backend is Working!");
+    res.status(200).send("LabelGuard AI Backend is Working!");
 });
 
-// Analyze product
+// POST analyze
 app.post("/", upload.single("productImage"), async (req, res) => {
 
     if (!req.file) {
@@ -29,27 +29,14 @@ app.post("/", upload.single("productImage"), async (req, res) => {
         });
     }
 
-    console.log("Product image received!");
-    console.log("File name:", req.file.originalname);
-    console.log("File size:", req.file.size, "bytes");
-
     try {
-
-        console.log("Starting OCR...");
+        console.log("Product image received!");
 
         const extractedText = await extractText(req.file.buffer);
 
-        console.log("OCR completed!");
-
         const productInfo = extractProductInfo(extractedText);
 
-        console.log("Product Information:");
-        console.log(productInfo);
-
         const compliance = checkCompliance(productInfo);
-
-        console.log("Compliance Result:");
-        console.log(compliance);
 
         return res.json({
             success: true,
