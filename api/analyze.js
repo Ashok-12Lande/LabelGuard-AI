@@ -11,19 +11,17 @@ const app = express();
 app.use(cors());
 
 const upload = multer({
-storage: multer.memoryStorage()
+    storage: multer.memoryStorage()
 });
 
+// Test route
 app.get("/", (req, res) => {
-res.send("LabelGuard AI Backend is Working!");
+    res.send("LabelGuard AI Backend is Working!");
 });
 
-app.post(
-"/",
-upload.single("productImage"),
-async (req, res) => {
+// Analyze product
+app.post("/", upload.single("productImage"), async (req, res) => {
 
-```
     if (!req.file) {
         return res.status(400).json({
             success: false,
@@ -39,19 +37,16 @@ async (req, res) => {
 
         console.log("Starting OCR...");
 
-        const extractedText =
-            await extractText(req.file.buffer);
+        const extractedText = await extractText(req.file.buffer);
 
         console.log("OCR completed!");
 
-        const productInfo =
-            extractProductInfo(extractedText);
+        const productInfo = extractProductInfo(extractedText);
 
         console.log("Product Information:");
         console.log(productInfo);
 
-        const compliance =
-            checkCompliance(productInfo);
+        const compliance = checkCompliance(productInfo);
 
         console.log("Compliance Result:");
         console.log(compliance);
@@ -66,11 +61,7 @@ async (req, res) => {
 
     } catch (error) {
 
-        console.error(
-
-            "Product Analysis Error:",
-            error
-        );
+        console.error("Product Analysis Error:", error);
 
         return res.status(500).json({
             success: false,
@@ -78,9 +69,6 @@ async (req, res) => {
             error: error.message
         });
     }
-}
-```
-
-);
+});
 
 module.exports = app;
