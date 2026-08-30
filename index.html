@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -13,16 +12,11 @@
     <title>LabelGuard AI</title>
 
     <link rel="stylesheet" href="style.css">
-
 </head>
-
 
 <body>
 
-
-    <!-- ==================================================
-         NAVIGATION
-    =================================================== -->
+    <!-- ================= NAVBAR ================= -->
 
     <header class="navbar">
 
@@ -31,33 +25,17 @@
         </div>
 
         <nav>
-
-            <a href="#home">
-                Home
-            </a>
-
-            <a href="#features">
-                Features
-            </a>
-
-            <a href="#about">
-                About
-            </a>
-
+            <a href="#home">Home</a>
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
         </nav>
 
     </header>
 
 
+    <!-- ================= HOME ================= -->
 
-    <!-- ==================================================
-         HERO SECTION
-    =================================================== -->
-
-    <section
-        id="home"
-        class="hero"
-    >
+    <section id="home" class="hero">
 
         <div class="hero-content">
 
@@ -65,173 +43,290 @@
                 AI-POWERED PRODUCT INSPECTION
             </p>
 
-
             <h1>
-
                 Scan.
-
-                <span>
-                    Check.
-                </span>
-
+                <span>Check.</span>
                 Protect.
-
             </h1>
 
-
             <p class="description">
-
                 Scan packaged products and automatically
                 check their label information using AI,
                 OCR and Legal Metrology rules.
-
             </p>
 
 
+            <!-- BUTTONS -->
 
-            <!-- ==================================================
-                 HIDDEN CAMERA INPUT
-            =================================================== -->
+            <div class="buttons">
 
-            <input
-                type="file"
-                id="cameraInput"
-                accept="image/*"
-                capture="environment"
-                style="display:none;"
-            >
+                <button
+                    id="cameraButton"
+                    class="primary-btn"
+                    type="button"
+                >
+                    📷 Open Camera
+                </button>
 
 
-            <!-- ==================================================
-                 HIDDEN FOLDER / GALLERY INPUT
-            =================================================== -->
+                <button
+                    id="uploadButton"
+                    class="secondary-btn"
+                    type="button"
+                >
+                    📁 Upload Image
+                </button>
+
+            </div>
+
+
+            <!-- Hidden folder/file input -->
 
             <input
                 type="file"
                 id="fileInput"
                 accept="image/*"
-                style="display:none;"
+                hidden
             >
 
 
+            <!-- ================= CAMERA ================= -->
 
-            <!-- ==================================================
-                 BUTTONS
-            =================================================== -->
+            <div
+                id="cameraBox"
+                style="display:none;"
+            >
 
-            <div class="buttons">
+                <video
+                    id="cameraVideo"
+                    autoplay
+                    playsinline
+                    muted
+                    style="
+                        width:100%;
+                        max-width:600px;
+                        border-radius:15px;
+                        margin-top:20px;
+                        background:#000;
+                    "
+                ></video>
 
 
-                <button
-                    type="button"
-                    id="cameraBtn"
-                    class="primary-btn"
+                <div
+                    style="
+                        margin-top:15px;
+                        display:flex;
+                        gap:10px;
+                        justify-content:center;
+                        flex-wrap:wrap;
+                    "
                 >
 
-                    📷 Scan Product
+                    <button
+                        id="captureButton"
+                        class="primary-btn"
+                        type="button"
+                    >
+                        📸 Capture Image
+                    </button>
 
-                </button>
 
+                    <button
+                        id="closeCameraButton"
+                        class="secondary-btn"
+                        type="button"
+                    >
+                        ✖ Close Camera
+                    </button>
 
-
-                <button
-                    type="button"
-                    id="fileBtn"
-                    class="secondary-btn"
-                >
-
-                    📁 Upload Image
-
-                </button>
-
+                </div>
 
             </div>
 
 
-
-            <!-- ==================================================
-                 IMAGE PREVIEW
-            =================================================== -->
+            <!-- ================= IMAGE PREVIEW ================= -->
 
             <div
-                id="previewContainer"
+                id="previewBox"
                 style="
                     display:none;
-                    margin-top:30px;
-                    text-align:center;
+                    margin-top:25px;
                 "
             >
 
-                <h3>
-                    Selected Product Image
-                </h3>
+                <h3>📷 Product Image</h3>
 
 
                 <img
-                    id="imagePreview"
-                    src=""
-                    alt="Selected product image"
+                    id="previewImage"
+                    alt="Selected product"
                     style="
                         display:block;
-                        max-width:100%;
-                        width:400px;
-                        max-height:400px;
+                        width:100%;
+                        max-width:700px;
+                        max-height:600px;
                         object-fit:contain;
-                        margin:20px auto;
-                        border-radius:12px;
+                        margin:15px auto;
+                        border-radius:15px;
                     "
                 >
 
 
-                <p id="imageName">
-                    Image selected
-                </p>
-
-
-                <!-- ==================================================
-                     ANALYZE BUTTON
-                =================================================== -->
-
                 <button
-                    type="button"
-                    id="analyzeBtn"
+                    id="analyzeButton"
                     class="primary-btn"
-                    style="margin-top:10px;"
+                    type="button"
                 >
-
                     🔍 Analyze Product
-
                 </button>
 
             </div>
 
 
-
-            <!-- ==================================================
-                 RESULT AREA
-            =================================================== -->
+            <!-- ================= LOADING ================= -->
 
             <div
-                id="result"
+                id="loadingBox"
                 style="
                     display:none;
-                    margin-top:35px;
-                    text-align:left;
+                    margin-top:25px;
                 "
             >
 
+                <h3>
+                    ⏳ Analyzing product...
+                </h3>
+
+                <p>
+                    OCR is reading the product label.
+                    Please wait.
+                </p>
+
             </div>
 
+
+            <!-- ================= RESULT ================= -->
+
+            <div
+                id="resultBox"
+                style="
+                    display:none;
+                    margin-top:30px;
+                    text-align:left;
+                    width:100%;
+                    max-width:800px;
+                    margin-left:auto;
+                    margin-right:auto;
+                "
+            >
+
+                <h2>
+                    📊 Analysis Result
+                </h2>
+
+
+                <!-- Status -->
+
+                <div
+                    id="statusResult"
+                    style="
+                        padding:15px;
+                        border-radius:10px;
+                        margin:15px 0;
+                    "
+                ></div>
+
+
+                <!-- Product Information -->
+
+                <div
+                    style="
+                        padding:20px;
+                        border-radius:15px;
+                        background:rgba(255,255,255,0.06);
+                        margin-top:15px;
+                    "
+                >
+
+                    <h3>
+                        📦 Product Information
+                    </h3>
+
+                    <div id="productInfo"></div>
+
+                </div>
+
+
+                <!-- Compliance -->
+
+                <div
+                    style="
+                        padding:20px;
+                        border-radius:15px;
+                        background:rgba(255,255,255,0.06);
+                        margin-top:15px;
+                    "
+                >
+
+                    <h3>
+                        ⚖️ Compliance
+                    </h3>
+
+                    <div id="complianceInfo"></div>
+
+                </div>
+
+
+                <!-- OCR -->
+
+                <div
+                    style="
+                        padding:20px;
+                        border-radius:15px;
+                        background:rgba(255,255,255,0.06);
+                        margin-top:15px;
+                    "
+                >
+
+                    <h3>
+                        📝 Extracted OCR Text
+                    </h3>
+
+                    <pre
+                        id="ocrText"
+                        style="
+                            white-space:pre-wrap;
+                            word-break:break-word;
+                            overflow:auto;
+                            max-height:500px;
+                        "
+                    ></pre>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================= ERROR ================= -->
+
+            <div
+                id="errorBox"
+                style="
+                    display:none;
+                    margin-top:20px;
+                    padding:15px;
+                    border-radius:10px;
+                    background:#7f1d1d;
+                    color:white;
+                "
+            ></div>
 
         </div>
 
     </section>
 
 
-
-    <!-- ==================================================
-         FEATURES
-    =================================================== -->
+    <!-- ================= FEATURES ================= -->
 
     <section
         id="features"
@@ -245,9 +340,6 @@
 
         <div class="features">
 
-
-            <!-- FEATURE 1 -->
-
             <div class="feature-card">
 
                 <div class="icon">
@@ -259,17 +351,12 @@
                 </h3>
 
                 <p>
-
-                    Capture or upload a product
-                    package image.
-
+                    Capture a product using your camera
+                    or upload an image.
                 </p>
 
             </div>
 
-
-
-            <!-- FEATURE 2 -->
 
             <div class="feature-card">
 
@@ -282,17 +369,12 @@
                 </h3>
 
                 <p>
-
-                    AI and OCR extract important
-                    information from the label.
-
+                    OCR extracts important information
+                    from the product label.
                 </p>
 
             </div>
 
-
-
-            <!-- FEATURE 3 -->
 
             <div class="feature-card">
 
@@ -305,17 +387,12 @@
                 </h3>
 
                 <p>
-
-                    Check the label against
+                    Check extracted information against
                     applicable requirements.
-
                 </p>
 
             </div>
 
-
-
-            <!-- FEATURE 4 -->
 
             <div class="feature-card">
 
@@ -328,24 +405,18 @@
                 </h3>
 
                 <p>
-
-                    Receive a clear compliance
-                    result and inspection report.
-
+                    Receive the complete product analysis
+                    and compliance result.
                 </p>
 
             </div>
-
 
         </div>
 
     </section>
 
 
-
-    <!-- ==================================================
-         ABOUT
-    =================================================== -->
+    <!-- ================= ABOUT ================= -->
 
     <section
         id="about"
@@ -356,45 +427,28 @@
             Why LabelGuard AI?
         </h2>
 
-
         <p>
-
-            Manual product-label inspection can be
-            slow and difficult.
-
-            LabelGuard AI aims to make the process
-            faster, simpler and more accessible
-            using AI, OCR and automated rule checking.
-
+            Manual product-label inspection can be slow
+            and difficult. LabelGuard AI uses camera
+            capture, OCR and automated compliance checking
+            to make inspection faster and easier.
         </p>
 
     </section>
 
 
-
-    <!-- ==================================================
-         FOOTER
-    =================================================== -->
+    <!-- ================= FOOTER ================= -->
 
     <footer>
 
         <p>
-
-            © 2026 LabelGuard AI |
-            SIH Project
-
+            © 2026 LabelGuard AI | SIH Project
         </p>
 
     </footer>
 
 
-
-    <!-- ==================================================
-         JAVASCRIPT
-    =================================================== -->
-
     <script src="script.js"></script>
-
 
 </body>
 

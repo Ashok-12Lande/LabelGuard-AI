@@ -1,6 +1,6 @@
 // ======================================================
-// LABELGUARD AI
-// CAMERA + FOLDER + IMAGE PREVIEW + API ANALYSIS
+// LABELGUARD AI - FRONTEND
+// Camera + Upload + OCR Analysis
 // ======================================================
 
 
@@ -8,31 +8,63 @@
 // ELEMENTS
 // ======================================================
 
-const cameraInput = document.getElementById("cameraInput");
-const fileInput = document.getElementById("fileInput");
+const cameraButton =
+    document.getElementById("cameraButton");
 
-const cameraBtn = document.getElementById("cameraBtn");
-const fileBtn = document.getElementById("fileBtn");
+const uploadButton =
+    document.getElementById("uploadButton");
 
-const previewContainer =
-    document.getElementById("previewContainer");
+const fileInput =
+    document.getElementById("fileInput");
 
-const imagePreview =
-    document.getElementById("imagePreview");
+const cameraBox =
+    document.getElementById("cameraBox");
 
-const imageName =
-    document.getElementById("imageName");
+const cameraVideo =
+    document.getElementById("cameraVideo");
 
-const analyzeBtn =
-    document.getElementById("analyzeBtn");
+const captureButton =
+    document.getElementById("captureButton");
+
+const closeCameraButton =
+    document.getElementById("closeCameraButton");
+
+const previewBox =
+    document.getElementById("previewBox");
+
+const previewImage =
+    document.getElementById("previewImage");
+
+const analyzeButton =
+    document.getElementById("analyzeButton");
+
+const loadingBox =
+    document.getElementById("loadingBox");
 
 const resultBox =
-    document.getElementById("result");
+    document.getElementById("resultBox");
+
+const errorBox =
+    document.getElementById("errorBox");
+
+const statusResult =
+    document.getElementById("statusResult");
+
+const productInfo =
+    document.getElementById("productInfo");
+
+const complianceInfo =
+    document.getElementById("complianceInfo");
+
+const ocrText =
+    document.getElementById("ocrText");
 
 
 // ======================================================
-// SELECTED IMAGE
+// VARIABLES
 // ======================================================
+
+let cameraStream = null;
 
 let selectedImage = null;
 
@@ -41,162 +73,342 @@ let selectedImage = null;
 // CAMERA BUTTON
 // ======================================================
 
-if (cameraBtn && cameraInput) {
+cameraButton.addEventListener(
+    "click",
+    startCamera
+);
 
-    cameraBtn.addEventListener("click", function () {
 
-        cameraInput.click();
+// ======================================================
+// START CAMERA
+// ======================================================
 
-    });
+async function startCamera() {
+
+    hideError();
+
+    try {
+
+        if (!navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia) {
+
+            showError(
+                "Camera is not supported by this browser."
+            );
+
+            return;
+        }
+
+
+        // Stop previous camera
+
+        stopCamera();
+
+
+        // Try rear camera first
+
+        try {
+
+            cameraStream =
+                await navigator.mediaDevices.getUserMedia({
+
+                    video: {
+                        facingMode: {
+                            ideal: "environment"
+                        }
+                    },
+
+                    audio: false
+
+                });
+
+        }
+
+        catch (error) {
+
+            console.log(
+                "Rear camera unavailable. Trying default camera..."
+            );
+
+
+            cameraStream =
+                await navigator.mediaDevices.getUserMedia({
+
+                    video: true,
+
+                    audio: false
+
+                });
+
+        }
+
+
+        cameraVideo.srcObject =
+            cameraStream;
+
+
+        cameraBox.style.display =
+            "block";
+
+
+        previewBox.style.display =
+            "none";
+
+
+        resultBox.style.display =
+            "none";
+
+
+        await cameraVideo.play();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Camera Error:",
+            error
+        );
+
+
+        showError(
+            "Camera could not be opened. Please allow camera permission in your browser and try again."
+        );
+
+    }
 
 }
 
 
 // ======================================================
-// FOLDER BUTTON
+// CAPTURE IMAGE
 // ======================================================
 
-if (fileBtn && fileInput) {
+captureButton.addEventListener(
+    "click",
+    captureImage
+);
 
-    fileBtn.addEventListener("click", function () {
+
+function captureImage() {
+
+    if (!cameraStream) {
+
+        showError(
+            "Camera is not running."
+        );
+
+        return;
+    }
+
+
+    const videoWidth =
+        cameraVideo.videoWidth;
+
+    const videoHeight =
+        cameraVideo.videoHeight;
+
+
+    if (!videoWidth || !videoHeight) {
+
+        showError(
+            "Camera image is not ready yet. Please wait a moment."
+        );
+
+        return;
+    }
+
+
+    const canvas =
+        document.createElement("canvas");
+
+
+    canvas.width =
+        videoWidth;
+
+    canvas.height =
+        videoHeight;
+
+
+    const context =
+        canvas.getContext("2d");
+
+
+    context.drawImage(
+        cameraVideo,
+        0,
+        0,
+        videoWidth,
+        videoHeight
+    );
+
+
+    canvas.toBlob(
+
+        function (blob) {
+
+            if (!blob) {
+
+                showError(
+                    "Could not capture the camera image."
+                );
+
+                return;
+            }
+
+
+            selectedImage =
+                new File(
+                    [blob],
+                    "camera-product.jpg",
+                    {
+                        type: "image/jpeg"
+                    }
+                );
+
+
+            previewImage.src =
+                URL.createObjectURL(
+                    selectedImage
+                );
+
+
+            previewBox.style.display =
+                "block";
+
+
+            resultBox.style.display =
+                "none";
+
+
+            stopCamera();
+
+        },
+
+        "image/jpeg",
+
+        0.90
+
+    );
+
+}
+
+
+// ======================================================
+// CLOSE CAMERA
+// ======================================================
+
+closeCameraButton.addEventListener(
+    "click",
+    function () {
+
+        stopCamera();
+
+        cameraBox.style.display =
+            "none";
+
+    }
+);
+
+
+// ======================================================
+// STOP CAMERA
+// ======================================================
+
+function stopCamera() {
+
+    if (cameraStream) {
+
+        cameraStream
+            .getTracks()
+            .forEach(
+                track => track.stop()
+            );
+
+        cameraStream = null;
+
+    }
+
+
+    cameraVideo.srcObject =
+        null;
+
+}
+
+
+// ======================================================
+// UPLOAD BUTTON
+// ======================================================
+
+uploadButton.addEventListener(
+    "click",
+    function () {
 
         fileInput.click();
 
-    });
-
-}
+    }
+);
 
 
 // ======================================================
-// CAMERA IMAGE
+// FILE SELECTED
 // ======================================================
 
-if (cameraInput) {
+fileInput.addEventListener(
+    "change",
+    function () {
 
-    cameraInput.addEventListener("change", function (event) {
+        const file =
+            fileInput.files[0];
 
-        const file = event.target.files[0];
 
         if (!file) {
             return;
         }
 
-        selectImage(file);
 
-    });
+        if (!file.type.startsWith("image/")) {
 
-}
+            showError(
+                "Please select an image file."
+            );
 
-
-// ======================================================
-// FOLDER IMAGE
-// ======================================================
-
-if (fileInput) {
-
-    fileInput.addEventListener("change", function (event) {
-
-        const file = event.target.files[0];
-
-        if (!file) {
             return;
         }
 
-        selectImage(file);
 
-    });
-
-}
+        selectedImage =
+            file;
 
 
-// ======================================================
-// SELECT IMAGE
-// ======================================================
-
-function selectImage(file) {
-
-    // Check image
-
-    if (!file.type.startsWith("image/")) {
-
-        alert("Please select an image file.");
-
-        return;
-
-    }
+        previewImage.src =
+            URL.createObjectURL(
+                file
+            );
 
 
-    // Save image
-
-    selectedImage = file;
-
-
-    // Create preview URL
-
-    const imageURL =
-        URL.createObjectURL(file);
-
-
-    // Show preview
-
-    if (imagePreview) {
-
-        imagePreview.src = imageURL;
-
-    }
-
-
-    // Show filename
-
-    if (imageName) {
-
-        imageName.textContent =
-            "Selected: " + file.name;
-
-    }
-
-
-    // Show preview container
-
-    if (previewContainer) {
-
-        previewContainer.style.display =
+        previewBox.style.display =
             "block";
 
+
+        resultBox.style.display =
+            "none";
+
+
+        hideError();
+
     }
-
-
-    console.log(
-        "Image selected:",
-        file.name
-    );
-
-    console.log(
-        "Image size:",
-        file.size,
-        "bytes"
-    );
-
-    console.log(
-        "Image type:",
-        file.type
-    );
-
-}
+);
 
 
 // ======================================================
 // ANALYZE BUTTON
 // ======================================================
 
-if (analyzeBtn) {
-
-    analyzeBtn.addEventListener(
-        "click",
-        analyzeProduct
-    );
-
-}
+analyzeButton.addEventListener(
+    "click",
+    analyzeProduct
+);
 
 
 // ======================================================
@@ -205,61 +417,43 @@ if (analyzeBtn) {
 
 async function analyzeProduct() {
 
-    // Check image
+    hideError();
+
 
     if (!selectedImage) {
 
-        alert(
-            "Please take a photo or select an image first."
+        showError(
+            "Please capture or upload a product image first."
         );
 
         return;
-
     }
 
 
     // Show loading
 
-    if (resultBox) {
-
-        resultBox.style.display =
-            "block";
-
-        resultBox.innerHTML = `
-            <div>
-                <h2>⏳ Analyzing Product...</h2>
-                <p>
-                    Please wait while LabelGuard AI
-                    reads the product label.
-                </p>
-            </div>
-        `;
-
-    }
+    loadingBox.style.display =
+        "block";
 
 
-    // Disable button
+    resultBox.style.display =
+        "none";
 
-    if (analyzeBtn) {
 
-        analyzeBtn.disabled = true;
-
-        analyzeBtn.textContent =
-            "⏳ Analyzing...";
-
-    }
+    analyzeButton.disabled =
+        true;
 
 
     try {
 
-        // Create form data
+        console.log(
+            "Sending image to Vercel API..."
+        );
+
 
         const formData =
             new FormData();
 
-
-        // IMPORTANT
-        // Backend expects productImage
 
         formData.append(
             "productImage",
@@ -267,12 +461,9 @@ async function analyzeProduct() {
         );
 
 
-        console.log(
-            "Sending image to /api/analyze..."
-        );
-
-
-        // Send image to Vercel
+        // ==================================================
+        // VERCEL API
+        // ==================================================
 
         const response =
             await fetch(
@@ -285,90 +476,107 @@ async function analyzeProduct() {
 
 
         console.log(
-            "Response status:",
+            "API status:",
             response.status
         );
 
 
-        // Try to read JSON
+        // Get response as TEXT first
 
-        const data =
-            await response.json();
+        // This prevents:
+        // Unexpected end of JSON input
+
+        const responseText =
+            await response.text();
 
 
         console.log(
             "API response:",
-            data
+            responseText
         );
 
 
-        // API error
+        let data;
 
-        if (!response.ok) {
+
+        try {
+
+            data =
+                JSON.parse(
+                    responseText
+                );
+
+        }
+
+        catch (jsonError) {
 
             throw new Error(
-                data.message ||
-                "Server returned an error."
+                "Server returned an invalid response. HTTP " +
+                response.status +
+                ": " +
+                responseText.substring(
+                    0,
+                    500
+                )
             );
 
         }
 
 
-        // Display result
+        if (!response.ok) {
 
-        showResult(data);
+            throw new Error(
+                data.message ||
+                data.error ||
+                "Server analysis failed."
+            );
+
+        }
+
+
+        if (!data.success) {
+
+            throw new Error(
+                data.message ||
+                "Product analysis failed."
+            );
+
+        }
+
+
+        // ==================================================
+        // DISPLAY COMPLETE RESULT
+        // ==================================================
+
+        displayResult(
+            data
+        );
 
 
     }
+
     catch (error) {
 
         console.error(
-            "Analysis error:",
+            "Analysis Error:",
             error
         );
 
 
-        if (resultBox) {
-
-            resultBox.style.display =
-                "block";
-
-            resultBox.innerHTML = `
-
-                <div>
-
-                    <h2>❌ Analysis Failed</h2>
-
-                    <p>
-                        ${escapeHTML(
-                            error.message
-                        )}
-                    </p>
-
-                    <p>
-                        Please try another image.
-                    </p>
-
-                </div>
-
-            `;
-
-        }
+        showError(
+            error.message
+        );
 
     }
+
     finally {
 
-        // Enable button
+        loadingBox.style.display =
+            "none";
 
-        if (analyzeBtn) {
 
-            analyzeBtn.disabled =
-                false;
-
-            analyzeBtn.textContent =
-                "🔍 Analyze Product";
-
-        }
+        analyzeButton.disabled =
+            false;
 
     }
 
@@ -376,157 +584,191 @@ async function analyzeProduct() {
 
 
 // ======================================================
-// SHOW RESULT
+// DISPLAY RESULT
 // ======================================================
 
-function showResult(data) {
-
-    if (!resultBox) {
-        return;
-    }
-
+function displayResult(data) {
 
     resultBox.style.display =
         "block";
 
 
-    const product =
-        data.productInfo || {};
+    // ==================================================
+    // STATUS
+    // ==================================================
+
+    statusResult.innerHTML = `
+        <strong>✅ Analysis Completed</strong>
+        <br>
+        ${escapeHTML(
+            data.message ||
+            "Product analyzed successfully."
+        )}
+    `;
+
+
+    // ==================================================
+    // PRODUCT INFORMATION
+    // ==================================================
+
+    const info =
+        data.productInfo;
+
+
+    if (info &&
+        typeof info === "object") {
+
+        productInfo.innerHTML =
+            createObjectHTML(
+                info
+            );
+
+    }
+
+    else {
+
+        productInfo.innerHTML =
+            "<p>No product information returned.</p>";
+
+    }
+
+
+    // ==================================================
+    // COMPLIANCE
+    // ==================================================
 
     const compliance =
-        data.compliance || {};
+        data.compliance;
 
 
-    resultBox.innerHTML = `
+    if (compliance &&
+        typeof compliance === "object") {
 
-        <div>
+        complianceInfo.innerHTML =
+            createObjectHTML(
+                compliance
+            );
 
-            <h2>
-                📊 Product Analysis Result
-            </h2>
+    }
 
+    else {
 
-            <p>
-                <strong>Product Name:</strong>
-                ${safeValue(product.productName)}
-            </p>
+        complianceInfo.innerHTML =
+            "<p>No compliance result returned.</p>";
 
-
-            <p>
-                <strong>Category:</strong>
-                ${safeValue(product.category)}
-            </p>
+    }
 
 
-            <p>
-                <strong>MRP:</strong>
-                ${safeValue(product.mrp)}
-            </p>
+    // ==================================================
+    // OCR TEXT
+    // ==================================================
+
+    ocrText.textContent =
+        data.text ||
+        "No OCR text returned.";
 
 
-            <p>
-                <strong>Net Quantity:</strong>
-                ${safeValue(product.netQuantity)}
-            </p>
+    // Scroll to result
 
-
-            <p>
-                <strong>Pages:</strong>
-                ${safeValue(product.pages)}
-            </p>
-
-
-            <p>
-                <strong>Size:</strong>
-                ${safeValue(product.size)}
-            </p>
-
-
-            <p>
-                <strong>Manufacturer:</strong>
-                ${safeValue(product.manufacturer)}
-            </p>
-
-
-            <p>
-                <strong>Batch Number:</strong>
-                ${safeValue(product.batchNumber)}
-            </p>
-
-
-            <p>
-                <strong>Best Before:</strong>
-                ${safeValue(product.bestBefore)}
-            </p>
-
-
-            <p>
-                <strong>FSSAI:</strong>
-                ${safeValue(product.fssai)}
-            </p>
-
-
-            <hr>
-
-
-            <h3>
-                ⚖️ Compliance Result
-            </h3>
-
-
-            <p>
-                <strong>Status:</strong>
-                ${safeValue(compliance.status)}
-            </p>
-
-
-            <p>
-                <strong>Score:</strong>
-                ${safeValue(compliance.score)}
-            </p>
-
-
-            <hr>
-
-
-            <h3>
-                📝 OCR Text
-            </h3>
-
-
-            <pre
-                style="
-                    white-space:pre-wrap;
-                    overflow-wrap:break-word;
-                "
-            >${safeValue(data.text)}</pre>
-
-
-        </div>
-
-    `;
+    resultBox.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
 
 }
 
 
 // ======================================================
-// SAFE VALUE
+// CREATE OBJECT HTML
 // ======================================================
 
-function safeValue(value) {
+function createObjectHTML(object) {
 
-    if (
-        value === null ||
-        value === undefined ||
-        value === ""
+    let html =
+        "<div>";
+
+
+    for (
+        const [key, value]
+        of Object.entries(object)
     ) {
 
-        return "Not detected";
+        let displayValue;
+
+
+        if (
+            value !== null &&
+            typeof value === "object"
+        ) {
+
+            displayValue =
+                createObjectHTML(
+                    value
+                );
+
+        }
+
+        else {
+
+            displayValue =
+                escapeHTML(
+                    String(
+                        value ??
+                        "Not detected"
+                    )
+                );
+
+        }
+
+
+        html += `
+
+            <div
+                style="
+                    padding:10px 0;
+                    border-bottom:1px solid rgba(255,255,255,0.12);
+                "
+            >
+
+                <strong>
+                    ${escapeHTML(
+                        formatKey(key)
+                    )}
+                </strong>
+
+                :
+
+                ${displayValue}
+
+            </div>
+
+        `;
 
     }
 
 
-    return escapeHTML(value);
+    html +=
+        "</div>";
+
+
+    return html;
+
+}
+
+
+// ======================================================
+// FORMAT KEY
+// ======================================================
+
+function formatKey(key) {
+
+    return String(key)
+        .replace(/([A-Z])/g, " $1")
+        .replace(/[_-]/g, " ")
+        .replace(
+            /^./,
+            char => char.toUpperCase()
+        );
 
 }
 
@@ -538,10 +780,67 @@ function safeValue(value) {
 function escapeHTML(value) {
 
     return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
+
+
+// ======================================================
+// ERROR
+// ======================================================
+
+function showError(message) {
+
+    errorBox.textContent =
+        "❌ " + message;
+
+
+    errorBox.style.display =
+        "block";
+
+
+    resultBox.style.display =
+        "none";
+
+}
+
+
+// ======================================================
+// HIDE ERROR
+// ======================================================
+
+function hideError() {
+
+    errorBox.style.display =
+        "none";
+
+}
+
+
+// ======================================================
+// PAGE EXIT
+// ======================================================
+
+window.addEventListener(
+    "beforeunload",
+    stopCamera
+);
