@@ -1,17 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>LabelGuard AI</title>
 
     <link rel="stylesheet" href="style.css">
+
 </head>
+
 
 <body>
 
-    <!-- Navigation -->
+
+    <!-- ==================================================
+         NAVIGATION
+    =================================================== -->
+
     <header class="navbar">
 
         <div class="logo">
@@ -19,121 +31,371 @@
         </div>
 
         <nav>
-            <a href="#home">Home</a>
-            <a href="#features">Features</a>
-            <a href="#about">About</a>
+
+            <a href="#home">
+                Home
+            </a>
+
+            <a href="#features">
+                Features
+            </a>
+
+            <a href="#about">
+                About
+            </a>
+
         </nav>
 
     </header>
 
 
-    <!-- Hero Section -->
-    <section id="home" class="hero">
+
+    <!-- ==================================================
+         HERO SECTION
+    =================================================== -->
+
+    <section
+        id="home"
+        class="hero"
+    >
 
         <div class="hero-content">
 
-            <p class="tag">AI-POWERED PRODUCT INSPECTION</p>
+            <p class="tag">
+                AI-POWERED PRODUCT INSPECTION
+            </p>
+
 
             <h1>
+
                 Scan.
-                <span>Check.</span>
+
+                <span>
+                    Check.
+                </span>
+
                 Protect.
+
             </h1>
 
+
             <p class="description">
-                Scan packaged products and automatically check
-                their label information using AI and Legal Metrology rules.
+
+                Scan packaged products and automatically
+                check their label information using AI,
+                OCR and Legal Metrology rules.
+
             </p>
+
+
+
+            <!-- ==================================================
+                 HIDDEN CAMERA INPUT
+            =================================================== -->
+
+            <input
+                type="file"
+                id="cameraInput"
+                accept="image/*"
+                capture="environment"
+                style="display:none;"
+            >
+
+
+            <!-- ==================================================
+                 HIDDEN FOLDER / GALLERY INPUT
+            =================================================== -->
+
+            <input
+                type="file"
+                id="fileInput"
+                accept="image/*"
+                style="display:none;"
+            >
+
+
+
+            <!-- ==================================================
+                 BUTTONS
+            =================================================== -->
 
             <div class="buttons">
 
-                <button class="primary-btn" onclick="startScan()">
+
+                <button
+                    type="button"
+                    id="cameraBtn"
+                    class="primary-btn"
+                >
+
                     📷 Scan Product
+
                 </button>
 
-                <button class="secondary-btn" onclick="uploadProduct()">
+
+
+                <button
+                    type="button"
+                    id="fileBtn"
+                    class="secondary-btn"
+                >
+
                     📁 Upload Image
+
+                </button>
+
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 IMAGE PREVIEW
+            =================================================== -->
+
+            <div
+                id="previewContainer"
+                style="
+                    display:none;
+                    margin-top:30px;
+                    text-align:center;
+                "
+            >
+
+                <h3>
+                    Selected Product Image
+                </h3>
+
+
+                <img
+                    id="imagePreview"
+                    src=""
+                    alt="Selected product image"
+                    style="
+                        display:block;
+                        max-width:100%;
+                        width:400px;
+                        max-height:400px;
+                        object-fit:contain;
+                        margin:20px auto;
+                        border-radius:12px;
+                    "
+                >
+
+
+                <p id="imageName">
+                    Image selected
+                </p>
+
+
+                <!-- ==================================================
+                     ANALYZE BUTTON
+                =================================================== -->
+
+                <button
+                    type="button"
+                    id="analyzeBtn"
+                    class="primary-btn"
+                    style="margin-top:10px;"
+                >
+
+                    🔍 Analyze Product
+
                 </button>
 
             </div>
+
+
+
+            <!-- ==================================================
+                 RESULT AREA
+            =================================================== -->
+
+            <div
+                id="result"
+                style="
+                    display:none;
+                    margin-top:35px;
+                    text-align:left;
+                "
+            >
+
+            </div>
+
 
         </div>
 
     </section>
 
 
-    <!-- Features -->
-    <section id="features" class="features-section">
 
-        <h2>What LabelGuard AI Does</h2>
+    <!-- ==================================================
+         FEATURES
+    =================================================== -->
+
+    <section
+        id="features"
+        class="features-section"
+    >
+
+        <h2>
+            What LabelGuard AI Does
+        </h2>
+
 
         <div class="features">
 
+
+            <!-- FEATURE 1 -->
+
             <div class="feature-card">
-                <div class="icon">📷</div>
-                <h3>Scan Product</h3>
+
+                <div class="icon">
+                    📷
+                </div>
+
+                <h3>
+                    Scan Product
+                </h3>
+
                 <p>
-                    Capture or upload a product package image.
+
+                    Capture or upload a product
+                    package image.
+
                 </p>
+
             </div>
 
 
+
+            <!-- FEATURE 2 -->
+
             <div class="feature-card">
-                <div class="icon">🔍</div>
-                <h3>Read Label</h3>
+
+                <div class="icon">
+                    🔍
+                </div>
+
+                <h3>
+                    Read Label
+                </h3>
+
                 <p>
-                    AI and OCR extract important information from the label.
+
+                    AI and OCR extract important
+                    information from the label.
+
                 </p>
+
             </div>
 
 
+
+            <!-- FEATURE 3 -->
+
             <div class="feature-card">
-                <div class="icon">⚖️</div>
-                <h3>Check Compliance</h3>
+
+                <div class="icon">
+                    ⚖️
+                </div>
+
+                <h3>
+                    Check Compliance
+                </h3>
+
                 <p>
-                    Check the label against applicable requirements.
+
+                    Check the label against
+                    applicable requirements.
+
                 </p>
+
             </div>
 
 
+
+            <!-- FEATURE 4 -->
+
             <div class="feature-card">
-                <div class="icon">📊</div>
-                <h3>Get Report</h3>
+
+                <div class="icon">
+                    📊
+                </div>
+
+                <h3>
+                    Get Report
+                </h3>
+
                 <p>
-                    Receive a clear compliance result and inspection report.
+
+                    Receive a clear compliance
+                    result and inspection report.
+
                 </p>
+
             </div>
+
 
         </div>
 
     </section>
 
 
-    <!-- About -->
-    <section id="about" class="about-section">
 
-        <h2>Why LabelGuard AI?</h2>
+    <!-- ==================================================
+         ABOUT
+    =================================================== -->
+
+    <section
+        id="about"
+        class="about-section"
+    >
+
+        <h2>
+            Why LabelGuard AI?
+        </h2>
+
 
         <p>
-            Manual product-label inspection can be slow and difficult.
-            LabelGuard AI aims to make the process faster, simpler and
-            more accessible using AI, OCR and automated rule checking.
+
+            Manual product-label inspection can be
+            slow and difficult.
+
+            LabelGuard AI aims to make the process
+            faster, simpler and more accessible
+            using AI, OCR and automated rule checking.
+
         </p>
 
     </section>
 
 
-    <!-- Footer -->
+
+    <!-- ==================================================
+         FOOTER
+    =================================================== -->
+
     <footer>
 
         <p>
-            © 2026 LabelGuard AI | SIH Project
+
+            © 2026 LabelGuard AI |
+            SIH Project
+
         </p>
 
     </footer>
 
 
+
+    <!-- ==================================================
+         JAVASCRIPT
+    =================================================== -->
+
     <script src="script.js"></script>
 
+
 </body>
+
 </html>
