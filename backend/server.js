@@ -11,39 +11,94 @@ const app = express();
 const PORT = 3000;
 
 
-// ================= CORS =================
+// ======================================================
+// CORS
+// ======================================================
 
 app.use(cors());
 
 
-// ================= FILE UPLOAD =================
+// ======================================================
+// MULTER
+// ======================================================
 
 const upload = multer({
-    storage: multer.memoryStorage()
+    storage: multer.memoryStorage(),
+
+    limits: {
+        fileSize: 10 * 1024 * 1024
+    }
 });
 
 
-// ================= TEST ROUTE =================
+// ======================================================
+// HOME TEST
+// ======================================================
 
 app.get("/", (req, res) => {
 
-    res.send(
-        "LabelGuard AI Backend is Working! 🚀"
-    );
+    res.status(200).json({
+
+        success: true,
+
+        message:
+            "LabelGuard AI backend is running!",
+
+        api:
+            "POST /api/analyze"
+
+    });
 
 });
 
 
-// ================= ANALYZE PRODUCT =================
+// ======================================================
+// API TEST
+// ======================================================
+
+app.get("/api/analyze", (req, res) => {
+
+    res.status(200).json({
+
+        success: true,
+
+        message:
+            "LabelGuard AI Analyze API is working!",
+
+        method:
+            "GET"
+
+    });
+
+});
+
+
+// ======================================================
+// ANALYZE PRODUCT
+// ======================================================
 
 app.post(
-    "/analyze",
+    "/api/analyze",
+
     upload.single("productImage"),
+
     async (req, res) => {
 
-        // Check image
+        console.log("");
+        console.log("================================");
+        console.log("LABELGUARD AI ANALYSIS REQUEST");
+        console.log("================================");
+
+
+        // --------------------------------------------------
+        // CHECK IMAGE
+        // --------------------------------------------------
 
         if (!req.file) {
+
+            console.log(
+                "❌ No image received."
+            );
 
             return res.status(400).json({
 
@@ -58,7 +113,7 @@ app.post(
 
 
         console.log(
-            "Product image received!"
+            "✅ Image received!"
         );
 
         console.log(
@@ -75,11 +130,15 @@ app.post(
 
         try {
 
-            // ================= STEP 1: OCR =================
+            // ==============================================
+            // STEP 1 - OCR
+            // ==============================================
 
+            console.log("");
             console.log(
-                "Starting OCR..."
+                "STEP 1: Starting OCR..."
             );
+
 
             const extractedText =
                 await extractText(
@@ -88,11 +147,33 @@ app.post(
 
 
             console.log(
-                "OCR completed!"
+                "✅ OCR completed."
             );
 
 
-            // ================= STEP 2: PRODUCT INFO =================
+            console.log("");
+            console.log(
+                "========== OCR TEXT =========="
+            );
+
+            console.log(
+                extractedText
+            );
+
+            console.log(
+                "=============================="
+            );
+
+
+            // ==============================================
+            // STEP 2 - EXTRACT PRODUCT INFORMATION
+            // ==============================================
+
+            console.log("");
+            console.log(
+                "STEP 2: Extracting product information..."
+            );
+
 
             const productInfo =
                 extractProductInfo(
@@ -101,15 +182,24 @@ app.post(
 
 
             console.log(
-                "Product Information:"
+                "✅ Product information extracted."
             );
+
 
             console.log(
                 productInfo
             );
 
 
-            // ================= STEP 3: COMPLIANCE =================
+            // ==============================================
+            // STEP 3 - COMPLIANCE
+            // ==============================================
+
+            console.log("");
+            console.log(
+                "STEP 3: Checking compliance..."
+            );
+
 
             const compliance =
                 checkCompliance(
@@ -118,17 +208,30 @@ app.post(
 
 
             console.log(
-                "Compliance Result:"
+                "✅ Compliance check completed."
             );
+
 
             console.log(
                 compliance
             );
 
 
-            // ================= SEND RESPONSE =================
+            // ==============================================
+            // SEND RESULT
+            // ==============================================
 
-            res.json({
+            console.log("");
+            console.log(
+                "✅ ANALYSIS COMPLETE"
+            );
+
+            console.log(
+                "================================"
+            );
+
+
+            return res.status(200).json({
 
                 success: true,
 
@@ -146,16 +249,21 @@ app.post(
 
             });
 
+        }
 
-        } catch (error) {
+        catch (error) {
+
+            console.error("");
+            console.error(
+                "❌ ANALYSIS ERROR"
+            );
 
             console.error(
-                "Product Analysis Error:",
                 error
             );
 
 
-            res.status(500).json({
+            return res.status(500).json({
 
                 success: false,
 
@@ -173,14 +281,88 @@ app.post(
 );
 
 
-// ================= START SERVER =================
+// ======================================================
+// 404 HANDLER
+// ======================================================
+
+app.use((req, res) => {
+
+    res.status(404).json({
+
+        success: false,
+
+        message:
+            "Route not found.",
+
+        path:
+            req.path,
+
+        method:
+            req.method
+
+    });
+
+});
+
+
+// ======================================================
+// ERROR HANDLER
+// ======================================================
+
+app.use((error, req, res, next) => {
+
+    console.error(
+        "Server error:",
+        error
+    );
+
+
+    res.status(500).json({
+
+        success: false,
+
+        message:
+            "Server error.",
+
+        error:
+            error.message
+
+    });
+
+});
+
+
+// ======================================================
+// START SERVER
+// ======================================================
 
 app.listen(
     PORT,
     () => {
 
+        console.log("");
         console.log(
-            `LabelGuard AI server running at http://localhost:${PORT}`
+            "======================================"
+        );
+
+        console.log(
+            "LabelGuard AI server running at:"
+        );
+
+        console.log(
+            `http://localhost:${PORT}`
+        );
+
+        console.log(
+            "API endpoint:"
+        );
+
+        console.log(
+            `http://localhost:${PORT}/api/analyze`
+        );
+
+        console.log(
+            "======================================"
         );
 
     }

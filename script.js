@@ -3,111 +3,130 @@
 // Camera + Upload + OCR Analysis
 // ======================================================
 
+document.addEventListener("DOMContentLoaded", () => {
 
-// ======================================================
-// ELEMENTS
-// ======================================================
+    // ==================================================
+    // ELEMENTS
+    // ==================================================
 
-const cameraButton =
-    document.getElementById("cameraButton");
+    const cameraButton =
+        document.getElementById("cameraButton");
 
-const uploadButton =
-    document.getElementById("uploadButton");
+    const uploadButton =
+        document.getElementById("uploadButton");
 
-const fileInput =
-    document.getElementById("fileInput");
+    const fileInput =
+        document.getElementById("fileInput");
 
-const cameraBox =
-    document.getElementById("cameraBox");
+    const cameraBox =
+        document.getElementById("cameraBox");
 
-const cameraVideo =
-    document.getElementById("cameraVideo");
+    const cameraVideo =
+        document.getElementById("cameraVideo");
 
-const captureButton =
-    document.getElementById("captureButton");
+    const captureButton =
+        document.getElementById("captureButton");
 
-const closeCameraButton =
-    document.getElementById("closeCameraButton");
+    const closeCameraButton =
+        document.getElementById("closeCameraButton");
 
-const previewBox =
-    document.getElementById("previewBox");
+    const previewBox =
+        document.getElementById("previewBox");
 
-const previewImage =
-    document.getElementById("previewImage");
+    const previewImage =
+        document.getElementById("previewImage");
 
-const analyzeButton =
-    document.getElementById("analyzeButton");
+    const analyzeButton =
+        document.getElementById("analyzeButton");
 
-const loadingBox =
-    document.getElementById("loadingBox");
+    const loadingBox =
+        document.getElementById("loadingBox");
 
-const resultBox =
-    document.getElementById("resultBox");
+    const resultBox =
+        document.getElementById("resultBox");
 
-const errorBox =
-    document.getElementById("errorBox");
+    const errorBox =
+        document.getElementById("errorBox");
 
-const statusResult =
-    document.getElementById("statusResult");
+    const statusResult =
+        document.getElementById("statusResult");
 
-const productInfo =
-    document.getElementById("productInfo");
+    const productInfo =
+        document.getElementById("productInfo");
 
-const complianceInfo =
-    document.getElementById("complianceInfo");
+    const complianceInfo =
+        document.getElementById("complianceInfo");
 
-const ocrText =
-    document.getElementById("ocrText");
-
-
-// ======================================================
-// VARIABLES
-// ======================================================
-
-let cameraStream = null;
-
-let selectedImage = null;
+    const ocrText =
+        document.getElementById("ocrText");
 
 
-// ======================================================
-// CAMERA BUTTON
-// ======================================================
+    // ==================================================
+    // VARIABLES
+    // ==================================================
 
-cameraButton.addEventListener(
-    "click",
-    startCamera
-);
+    let cameraStream = null;
+    let selectedImage = null;
 
 
-// ======================================================
-// START CAMERA
-// ======================================================
+    // ==================================================
+    // CHECK ELEMENTS
+    // ==================================================
 
-async function startCamera() {
+    if (!cameraButton ||
+        !uploadButton ||
+        !fileInput ||
+        !cameraBox ||
+        !cameraVideo ||
+        !captureButton ||
+        !closeCameraButton ||
+        !previewBox ||
+        !previewImage ||
+        !analyzeButton) {
 
-    hideError();
+        console.error(
+            "LabelGuard AI: Required HTML elements are missing."
+        );
 
-    try {
-
-        if (!navigator.mediaDevices ||
-            !navigator.mediaDevices.getUserMedia) {
-
-            showError(
-                "Camera is not supported by this browser."
-            );
-
-            return;
-        }
-
-
-        // Stop previous camera
-
-        stopCamera();
+        return;
+    }
 
 
-        // Try rear camera first
+    // ==================================================
+    // CAMERA BUTTON
+    // ==================================================
+
+    cameraButton.addEventListener(
+        "click",
+        startCamera
+    );
+
+
+    // ==================================================
+    // START CAMERA
+    // ==================================================
+
+    async function startCamera() {
+
+        hideError();
 
         try {
+
+            if (!navigator.mediaDevices ||
+                !navigator.mediaDevices.getUserMedia) {
+
+                showError(
+                    "Camera is not supported by this browser."
+                );
+
+                return;
+            }
+
+
+            stopCamera();
+
+
+            // Request camera
 
             cameraStream =
                 await navigator.mediaDevices.getUserMedia({
@@ -115,6 +134,14 @@ async function startCamera() {
                     video: {
                         facingMode: {
                             ideal: "environment"
+                        },
+
+                        width: {
+                            ideal: 1280
+                        },
+
+                        height: {
+                            ideal: 720
                         }
                     },
 
@@ -122,272 +149,350 @@ async function startCamera() {
 
                 });
 
-        }
 
-        catch (error) {
+            // Connect camera to video
 
-            console.log(
-                "Rear camera unavailable. Trying default camera..."
-            );
+            cameraVideo.srcObject =
+                cameraStream;
 
 
-            cameraStream =
-                await navigator.mediaDevices.getUserMedia({
-
-                    video: true,
-
-                    audio: false
-
-                });
-
-        }
-
-
-        cameraVideo.srcObject =
-            cameraStream;
-
-
-        cameraBox.style.display =
-            "block";
-
-
-        previewBox.style.display =
-            "none";
-
-
-        resultBox.style.display =
-            "none";
-
-
-        await cameraVideo.play();
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Camera Error:",
-            error
-        );
-
-
-        showError(
-            "Camera could not be opened. Please allow camera permission in your browser and try again."
-        );
-
-    }
-
-}
-
-
-// ======================================================
-// CAPTURE IMAGE
-// ======================================================
-
-captureButton.addEventListener(
-    "click",
-    captureImage
-);
-
-
-function captureImage() {
-
-    if (!cameraStream) {
-
-        showError(
-            "Camera is not running."
-        );
-
-        return;
-    }
-
-
-    const videoWidth =
-        cameraVideo.videoWidth;
-
-    const videoHeight =
-        cameraVideo.videoHeight;
-
-
-    if (!videoWidth || !videoHeight) {
-
-        showError(
-            "Camera image is not ready yet. Please wait a moment."
-        );
-
-        return;
-    }
-
-
-    const canvas =
-        document.createElement("canvas");
-
-
-    canvas.width =
-        videoWidth;
-
-    canvas.height =
-        videoHeight;
-
-
-    const context =
-        canvas.getContext("2d");
-
-
-    context.drawImage(
-        cameraVideo,
-        0,
-        0,
-        videoWidth,
-        videoHeight
-    );
-
-
-    canvas.toBlob(
-
-        function (blob) {
-
-            if (!blob) {
-
-                showError(
-                    "Could not capture the camera image."
-                );
-
-                return;
-            }
-
-
-            selectedImage =
-                new File(
-                    [blob],
-                    "camera-product.jpg",
-                    {
-                        type: "image/jpeg"
-                    }
-                );
-
-
-            previewImage.src =
-                URL.createObjectURL(
-                    selectedImage
-                );
+            cameraBox.style.display =
+                "block";
 
 
             previewBox.style.display =
-                "block";
+                "none";
 
 
             resultBox.style.display =
                 "none";
 
 
-            stopCamera();
+            // Start video
 
-        },
-
-        "image/jpeg",
-
-        0.90
-
-    );
-
-}
+            await cameraVideo.play();
 
 
-// ======================================================
-// CLOSE CAMERA
-// ======================================================
-
-closeCameraButton.addEventListener(
-    "click",
-    function () {
-
-        stopCamera();
-
-        cameraBox.style.display =
-            "none";
-
-    }
-);
-
-
-// ======================================================
-// STOP CAMERA
-// ======================================================
-
-function stopCamera() {
-
-    if (cameraStream) {
-
-        cameraStream
-            .getTracks()
-            .forEach(
-                track => track.stop()
+            console.log(
+                "Camera started successfully."
             );
 
-        cameraStream = null;
-
-    }
-
-
-    cameraVideo.srcObject =
-        null;
-
-}
-
-
-// ======================================================
-// UPLOAD BUTTON
-// ======================================================
-
-uploadButton.addEventListener(
-    "click",
-    function () {
-
-        fileInput.click();
-
-    }
-);
-
-
-// ======================================================
-// FILE SELECTED
-// ======================================================
-
-fileInput.addEventListener(
-    "change",
-    function () {
-
-        const file =
-            fileInput.files[0];
-
-
-        if (!file) {
-            return;
         }
 
+        catch (error) {
 
-        if (!file.type.startsWith("image/")) {
+            console.error(
+                "Camera Error:",
+                error
+            );
+
 
             showError(
-                "Please select an image file."
+                "Camera could not be opened. Please allow camera permission and try again."
+            );
+
+        }
+
+    }
+
+
+    // ==================================================
+    // CAPTURE IMAGE
+    // ==================================================
+
+    captureButton.addEventListener(
+        "click",
+        captureImage
+    );
+
+
+    function captureImage() {
+
+        hideError();
+
+
+        if (!cameraStream) {
+
+            showError(
+                "Camera is not running."
             );
 
             return;
         }
 
 
-        selectedImage =
-            file;
+        const width =
+            cameraVideo.videoWidth;
+
+        const height =
+            cameraVideo.videoHeight;
 
 
-        previewImage.src =
-            URL.createObjectURL(
+        if (!width || !height) {
+
+            showError(
+                "Camera is not ready. Please wait a moment."
+            );
+
+            return;
+        }
+
+
+        // Create canvas
+
+        const canvas =
+            document.createElement("canvas");
+
+
+        canvas.width =
+            width;
+
+        canvas.height =
+            height;
+
+
+        const context =
+            canvas.getContext("2d");
+
+
+        // Draw camera frame
+
+        context.drawImage(
+            cameraVideo,
+            0,
+            0,
+            width,
+            height
+        );
+
+
+        // Convert to JPEG
+
+        canvas.toBlob(
+
+            (blob) => {
+
+                if (!blob) {
+
+                    showError(
+                        "Could not capture image."
+                    );
+
+                    return;
+                }
+
+
+                selectedImage =
+                    new File(
+                        [blob],
+                        "camera-product.jpg",
+                        {
+                            type: "image/jpeg"
+                        }
+                    );
+
+
+                // Show captured image
+
+                const imageURL =
+                    URL.createObjectURL(
+                        selectedImage
+                    );
+
+
+                previewImage.src =
+                    imageURL;
+
+
+                previewBox.style.display =
+                    "block";
+
+
+                cameraBox.style.display =
+                    "none";
+
+
+                resultBox.style.display =
+                    "none";
+
+
+                stopCamera();
+
+
+                console.log(
+                    "Camera image captured:",
+                    selectedImage
+                );
+
+            },
+
+            "image/jpeg",
+
+            0.85
+
+        );
+
+    }
+
+
+    // ==================================================
+    // CLOSE CAMERA
+    // ==================================================
+
+    closeCameraButton.addEventListener(
+        "click",
+        () => {
+
+            stopCamera();
+
+            cameraBox.style.display =
+                "none";
+
+        }
+    );
+
+
+    // ==================================================
+    // STOP CAMERA
+    // ==================================================
+
+    function stopCamera() {
+
+        if (cameraStream) {
+
+            cameraStream
+                .getTracks()
+                .forEach(
+                    track => track.stop()
+                );
+
+            cameraStream =
+                null;
+        }
+
+
+        cameraVideo.srcObject =
+            null;
+
+    }
+
+
+    // ==================================================
+    // UPLOAD BUTTON
+    // ==================================================
+
+    uploadButton.addEventListener(
+        "click",
+        () => {
+
+            fileInput.click();
+
+        }
+    );
+
+
+    // ==================================================
+    // FILE SELECTED
+    // ==================================================
+
+    fileInput.addEventListener(
+        "change",
+        () => {
+
+            hideError();
+
+
+            const file =
+                fileInput.files[0];
+
+
+            if (!file) {
+
+                return;
+            }
+
+
+            // Check image
+
+            if (!file.type.startsWith("image/")) {
+
+                showError(
+                    "Please select an image file."
+                );
+
+                return;
+            }
+
+
+            // Save image
+
+            selectedImage =
+                file;
+
+
+            // Show preview
+
+            const imageURL =
+                URL.createObjectURL(
+                    file
+                );
+
+
+            previewImage.src =
+                imageURL;
+
+
+            previewBox.style.display =
+                "block";
+
+
+            cameraBox.style.display =
+                "none";
+
+
+            resultBox.style.display =
+                "none";
+
+
+            console.log(
+                "Image selected:",
                 file
             );
 
+        }
+    );
 
-        previewBox.style.display =
+
+    // ==================================================
+    // ANALYZE BUTTON
+    // ==================================================
+
+    analyzeButton.addEventListener(
+        "click",
+        analyzeProduct
+    );
+
+
+    // ==================================================
+    // ANALYZE PRODUCT
+    // ==================================================
+
+    async function analyzeProduct() {
+
+        hideError();
+
+
+        if (!selectedImage) {
+
+            showError(
+                "Please capture or upload a product image first."
+            );
+
+            return;
+        }
+
+
+        loadingBox.style.display =
             "block";
 
 
@@ -395,452 +500,478 @@ fileInput.addEventListener(
             "none";
 
 
-        hideError();
-
-    }
-);
-
-
-// ======================================================
-// ANALYZE BUTTON
-// ======================================================
-
-analyzeButton.addEventListener(
-    "click",
-    analyzeProduct
-);
-
-
-// ======================================================
-// ANALYZE PRODUCT
-// ======================================================
-
-async function analyzeProduct() {
-
-    hideError();
-
-
-    if (!selectedImage) {
-
-        showError(
-            "Please capture or upload a product image first."
-        );
-
-        return;
-    }
-
-
-    // Show loading
-
-    loadingBox.style.display =
-        "block";
-
-
-    resultBox.style.display =
-        "none";
-
-
-    analyzeButton.disabled =
-        true;
-
-
-    try {
-
-        console.log(
-            "Sending image to Vercel API..."
-        );
-
-
-        const formData =
-            new FormData();
-
-
-        formData.append(
-            "productImage",
-            selectedImage
-        );
-
-
-        // ==================================================
-        // VERCEL API
-        // ==================================================
-
-        const response =
-            await fetch(
-                "/api/analyze",
-                {
-                    method: "POST",
-                    body: formData
-                }
-            );
-
-
-        console.log(
-            "API status:",
-            response.status
-        );
-
-
-        // Get response as TEXT first
-
-        // This prevents:
-        // Unexpected end of JSON input
-
-        const responseText =
-            await response.text();
-
-
-        console.log(
-            "API response:",
-            responseText
-        );
-
-
-        let data;
+        analyzeButton.disabled =
+            true;
 
 
         try {
 
-            data =
-                JSON.parse(
-                    responseText
+            console.log(
+                "================================"
+            );
+
+            console.log(
+                "Sending image to backend..."
+            );
+
+
+            // ==================================================
+            // FORM DATA
+            // ==================================================
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "productImage",
+                selectedImage
+            );
+
+
+            // ==================================================
+            // LOCAL NODE BACKEND
+            // ==================================================
+
+            const response =
+                await fetch(
+                    "http://localhost:3000/api/analyze",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
                 );
 
-        }
 
-        catch (jsonError) {
+            console.log(
+                "Backend HTTP status:",
+                response.status
+            );
 
-            throw new Error(
-                "Server returned an invalid response. HTTP " +
-                response.status +
-                ": " +
-                responseText.substring(
-                    0,
-                    500
-                )
+
+            // ==================================================
+            // READ RESPONSE
+            // ==================================================
+
+            const responseText =
+                await response.text();
+
+
+            console.log(
+                "Backend response:",
+                responseText
+            );
+
+
+            let data;
+
+
+            try {
+
+                data =
+                    JSON.parse(
+                        responseText
+                    );
+
+            }
+
+            catch (jsonError) {
+
+                throw new Error(
+                    "Backend returned an invalid response. HTTP " +
+                    response.status
+                );
+
+            }
+
+
+            // ==================================================
+            // CHECK HTTP ERROR
+            // ==================================================
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.message ||
+                    data.error ||
+                    "Backend analysis failed."
+                );
+
+            }
+
+
+            // ==================================================
+            // CHECK SUCCESS
+            // ==================================================
+
+            if (!data.success) {
+
+                throw new Error(
+                    data.message ||
+                    "Product analysis failed."
+                );
+
+            }
+
+
+            console.log(
+                "Product analysis completed!"
+            );
+
+
+            // ==================================================
+            // DISPLAY RESULT
+            // ==================================================
+
+            displayResult(
+                data
             );
 
         }
 
+        catch (error) {
 
-        if (!response.ok) {
+            console.error(
+                "Analysis Error:",
+                error
+            );
 
-            throw new Error(
-                data.message ||
-                data.error ||
-                "Server analysis failed."
+
+            showError(
+                error.message ||
+                "Could not connect to backend."
             );
 
         }
 
+        finally {
 
-        if (!data.success) {
+            loadingBox.style.display =
+                "none";
 
-            throw new Error(
-                data.message ||
-                "Product analysis failed."
-            );
+
+            analyzeButton.disabled =
+                false;
 
         }
+
+    }
+
+
+    // ==================================================
+    // DISPLAY RESULT
+    // ==================================================
+
+    function displayResult(data) {
+
+        resultBox.style.display =
+            "block";
 
 
         // ==================================================
-        // DISPLAY COMPLETE RESULT
+        // STATUS
         // ==================================================
 
-        displayResult(
-            data
-        );
+        if (statusResult) {
 
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Analysis Error:",
-            error
-        );
-
-
-        showError(
-            error.message
-        );
-
-    }
-
-    finally {
-
-        loadingBox.style.display =
-            "none";
-
-
-        analyzeButton.disabled =
-            false;
-
-    }
-
-}
-
-
-// ======================================================
-// DISPLAY RESULT
-// ======================================================
-
-function displayResult(data) {
-
-    resultBox.style.display =
-        "block";
-
-
-    // ==================================================
-    // STATUS
-    // ==================================================
-
-    statusResult.innerHTML = `
-        <strong>✅ Analysis Completed</strong>
-        <br>
-        ${escapeHTML(
-            data.message ||
-            "Product analyzed successfully."
-        )}
-    `;
-
-
-    // ==================================================
-    // PRODUCT INFORMATION
-    // ==================================================
-
-    const info =
-        data.productInfo;
-
-
-    if (info &&
-        typeof info === "object") {
-
-        productInfo.innerHTML =
-            createObjectHTML(
-                info
-            );
-
-    }
-
-    else {
-
-        productInfo.innerHTML =
-            "<p>No product information returned.</p>";
-
-    }
-
-
-    // ==================================================
-    // COMPLIANCE
-    // ==================================================
-
-    const compliance =
-        data.compliance;
-
-
-    if (compliance &&
-        typeof compliance === "object") {
-
-        complianceInfo.innerHTML =
-            createObjectHTML(
-                compliance
-            );
-
-    }
-
-    else {
-
-        complianceInfo.innerHTML =
-            "<p>No compliance result returned.</p>";
-
-    }
-
-
-    // ==================================================
-    // OCR TEXT
-    // ==================================================
-
-    ocrText.textContent =
-        data.text ||
-        "No OCR text returned.";
-
-
-    // Scroll to result
-
-    resultBox.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-    });
-
-}
-
-
-// ======================================================
-// CREATE OBJECT HTML
-// ======================================================
-
-function createObjectHTML(object) {
-
-    let html =
-        "<div>";
-
-
-    for (
-        const [key, value]
-        of Object.entries(object)
-    ) {
-
-        let displayValue;
-
-
-        if (
-            value !== null &&
-            typeof value === "object"
-        ) {
-
-            displayValue =
-                createObjectHTML(
-                    value
-                );
-
-        }
-
-        else {
-
-            displayValue =
-                escapeHTML(
-                    String(
-                        value ??
-                        "Not detected"
-                    )
-                );
-
-        }
-
-
-        html += `
-
-            <div
-                style="
-                    padding:10px 0;
-                    border-bottom:1px solid rgba(255,255,255,0.12);
-                "
-            >
+            statusResult.innerHTML = `
 
                 <strong>
-                    ${escapeHTML(
-                        formatKey(key)
-                    )}
+                    ✅ Analysis Completed
                 </strong>
 
-                :
+                <br><br>
 
-                ${displayValue}
+                ${escapeHTML(
+                    data.message ||
+                    "Product analyzed successfully."
+                )}
 
-            </div>
+            `;
 
-        `;
+        }
+
+
+        // ==================================================
+        // PRODUCT INFORMATION
+        // ==================================================
+
+        if (productInfo) {
+
+            if (
+                data.productInfo &&
+                typeof data.productInfo === "object"
+            ) {
+
+                productInfo.innerHTML =
+                    createObjectHTML(
+                        data.productInfo
+                    );
+
+            }
+
+            else {
+
+                productInfo.innerHTML =
+                    "<p>No product information returned.</p>";
+
+            }
+
+        }
+
+
+        // ==================================================
+        // COMPLIANCE
+        // ==================================================
+
+        if (complianceInfo) {
+
+            if (
+                data.compliance &&
+                typeof data.compliance === "object"
+            ) {
+
+                complianceInfo.innerHTML =
+                    createObjectHTML(
+                        data.compliance
+                    );
+
+            }
+
+            else {
+
+                complianceInfo.innerHTML =
+                    "<p>No compliance result returned.</p>";
+
+            }
+
+        }
+
+
+        // ==================================================
+        // OCR TEXT
+        // ==================================================
+
+        if (ocrText) {
+
+            ocrText.textContent =
+                data.text ||
+                "No OCR text returned.";
+
+        }
+
+
+        // ==================================================
+        // SCROLL TO RESULT
+        // ==================================================
+
+        resultBox.scrollIntoView({
+
+            behavior: "smooth",
+
+            block: "start"
+
+        });
 
     }
 
 
-    html +=
-        "</div>";
+    // ==================================================
+    // CREATE OBJECT HTML
+    // ==================================================
+
+    function createObjectHTML(object) {
+
+        let html =
+            "<div>";
 
 
-    return html;
+        for (
+            const [key, value]
+            of Object.entries(object)
+        ) {
 
-}
-
-
-// ======================================================
-// FORMAT KEY
-// ======================================================
-
-function formatKey(key) {
-
-    return String(key)
-        .replace(/([A-Z])/g, " $1")
-        .replace(/[_-]/g, " ")
-        .replace(
-            /^./,
-            char => char.toUpperCase()
-        );
-
-}
+            let displayValue;
 
 
-// ======================================================
-// ESCAPE HTML
-// ======================================================
+            if (
+                value !== null &&
+                typeof value === "object"
+            ) {
 
-function escapeHTML(value) {
+                displayValue =
+                    createObjectHTML(
+                        value
+                    );
 
-    return String(value)
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+            }
 
-}
+            else {
+
+                displayValue =
+                    escapeHTML(
+                        String(
+                            value ??
+                            "Not detected"
+                        )
+                    );
+
+            }
 
 
-// ======================================================
-// ERROR
-// ======================================================
+            html += `
 
-function showError(message) {
+                <div
+                    style="
+                        padding:10px 0;
+                        border-bottom:1px solid rgba(255,255,255,0.12);
+                    "
+                >
 
-    errorBox.textContent =
-        "❌ " + message;
+                    <strong>
+                        ${escapeHTML(
+                            formatKey(key)
+                        )}
+                    </strong>
 
+                    :
 
-    errorBox.style.display =
-        "block";
+                    ${displayValue}
 
+                </div>
 
-    resultBox.style.display =
-        "none";
+            `;
 
-}
-
-
-// ======================================================
-// HIDE ERROR
-// ======================================================
-
-function hideError() {
-
-    errorBox.style.display =
-        "none";
-
-}
+        }
 
 
-// ======================================================
-// PAGE EXIT
-// ======================================================
+        html +=
+            "</div>";
 
-window.addEventListener(
-    "beforeunload",
-    stopCamera
-);
+
+        return html;
+
+    }
+
+
+    // ==================================================
+    // FORMAT KEY
+    // ==================================================
+
+    function formatKey(key) {
+
+        return String(key)
+
+            .replace(
+                /([A-Z])/g,
+                " $1"
+            )
+
+            .replace(
+                /[_-]/g,
+                " "
+            )
+
+            .replace(
+                /^./,
+                char =>
+                    char.toUpperCase()
+            );
+
+    }
+
+
+    // ==================================================
+    // ESCAPE HTML
+    // ==================================================
+
+    function escapeHTML(value) {
+
+        return String(value)
+
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+
+            .replace(
+                /</g,
+                "&lt;"
+            )
+
+            .replace(
+                />/g,
+                "&gt;"
+            )
+
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+
+    }
+
+
+    // ==================================================
+    // SHOW ERROR
+    // ==================================================
+
+    function showError(message) {
+
+        if (!errorBox) {
+
+            alert(message);
+
+            return;
+        }
+
+
+        errorBox.textContent =
+            "❌ " + message;
+
+
+        errorBox.style.display =
+            "block";
+
+
+        if (resultBox) {
+
+            resultBox.style.display =
+                "none";
+
+        }
+
+    }
+
+
+    // ==================================================
+    // HIDE ERROR
+    // ==================================================
+
+    function hideError() {
+
+        if (errorBox) {
+
+            errorBox.style.display =
+                "none";
+
+        }
+
+    }
+
+
+    // ==================================================
+    // PAGE EXIT
+    // ==================================================
+
+    window.addEventListener(
+        "beforeunload",
+        stopCamera
+    );
+
+});

@@ -3,12 +3,12 @@ const sharp = require("sharp");
 
 
 // ======================================================
-// IMAGE PREPROCESSING
+// PREPARE IMAGE FOR OCR
 // ======================================================
 
-async function prepareImage(imageBuffer, angle, mode = "normal") {
+async function prepareImage(buffer, angle) {
 
-    let image = sharp(imageBuffer)
+    return await sharp(buffer)
         .rotate(angle, {
             background: {
                 r: 255,
@@ -17,91 +17,23 @@ async function prepareImage(imageBuffer, angle, mode = "normal") {
                 alpha: 1
             }
         })
+
+        // Make text larger for OCR
         .resize({
-            width: 2800,
+            width: 3000,
             withoutEnlargement: false,
             fit: "inside"
-        });
+        })
 
-
-    // --------------------------------------------------
-    // NORMAL
-    // --------------------------------------------------
-
-    if (mode === "normal") {
-
-        return await image
-            .grayscale()
-            .normalize()
-            .sharpen({
-                sigma: 1.2
-            })
-            .png()
-            .toBuffer();
-
-    }
-
-
-    // --------------------------------------------------
-    // HIGH CONTRAST
-    // --------------------------------------------------
-
-    if (mode === "contrast") {
-
-        return await image
-            .grayscale()
-            .normalize()
-            .linear(1.4, -30)
-            .sharpen({
-                sigma: 1.5
-            })
-            .png()
-            .toBuffer();
-
-    }
-
-
-    // --------------------------------------------------
-    // THRESHOLD
-    // --------------------------------------------------
-
-    if (mode === "threshold") {
-
-        return await image
-            .grayscale()
-            .normalize()
-            .threshold(170)
-            .png()
-            .toBuffer();
-
-    }
-
-
-    // --------------------------------------------------
-    // SHARP
-    // --------------------------------------------------
-
-    if (mode === "sharp") {
-
-        return await image
-            .grayscale()
-            .normalize()
-            .sharpen({
-                sigma: 2
-            })
-            .linear(1.2, -15)
-            .png()
-            .toBuffer();
-
-    }
-
-
-    return await image
+        // Improve text
         .grayscale()
         .normalize()
+        .sharpen({
+            sigma: 1.5
+        })
+
         .png()
         .toBuffer();
-
 }
 
 
@@ -109,20 +41,19 @@ async function prepareImage(imageBuffer, angle, mode = "normal") {
 // CLEAN OCR TEXT
 // ======================================================
 
-function cleanOCRText(text) {
+function cleanText(text) {
 
     if (!text) {
         return "";
     }
 
     return text
-        .replace(/\n\s*\n\s*\n+/g, "\n\n")
+        .replace(/\r/g, "")
         .split("\n")
         .map(line => line.trim())
+        .filter(line => line.length > 0)
         .join("\n")
-        .replace(/[ \t]{3,}/g, "  ")
         .trim();
-
 }
 
 
@@ -130,16 +61,19 @@ function cleanOCRText(text) {
 // OCR SCORE
 // ======================================================
 
-function calculateOCRScore(text) {
+function scoreOCR(text) {
 
     if (!text) {
         return 0;
     }
 
+    let score = 0;
 
-    const upperText =
+    const upper =
         text.toUpperCase();
 
+
+    // Important product-label words
 
     const keywords = [
 
@@ -147,94 +81,110 @@ function calculateOCRScore(text) {
         "M.R.P",
         "RS",
 
-        "PRODUCT",
-        "NOTEBOOK",
-        "EXERCISE",
-
-        "MANUFACTURED",
-        "MANUFACTURER",
-        "MARKETED",
-        "INDUSTRIES",
-
-        "NET",
-        "QUANTITY",
+        "SIZE",
+        "CM",
 
         "PAGES",
         "PAGE",
 
-        "SIZE",
-        "CM",
+        "MANUFACTURED",
+        "MANUFACTURER",
 
-        "FSSAI",
+        "MARKETED",
+        "INDUSTRIES",
+
+        "NOTEBOOK",
+        "EXERCISE",
+
+        "MADE IN INDIA",
+        "INDIA",
+
+        "NET",
+        "QUANTITY",
 
         "BATCH",
         "LOT",
 
         "EXPIRY",
-        "EXPIRES",
-
         "BEST BEFORE",
 
-        "INDIA",
-        "MADE IN INDIA",
-
-        "A4"
+        "FSSAI"
 
     ];
 
 
-    let score = 0;
+    for (const word of keywords) {
 
+        if (upper.includes(word)) {
 
-    // --------------------------------------------------
-    // KEYWORDS
-    // --------------------------------------------------
-
-    for (const keyword of keywords) {
-
-        if (upperText.includes(keyword)) {
-
-            score += 10;
+            score += 20;
 
         }
 
     }
 
 
-    // --------------------------------------------------
-    // READABLE WORDS
-    // --------------------------------------------------
-
-    const words =
-        text.match(/[A-Za-z]{3,}/g) || [];
-
-
-    score += Math.min(
-        words.length,
-        50
-    );
-
-
-    // --------------------------------------------------
-    // NUMBERS
-    // --------------------------------------------------
+    // Numbers are useful on labels
 
     const numbers =
         text.match(/\d+/g) || [];
 
+    score +=
+        Math.min(
+            numbers.length * 4,
+            60
+        );
 
-    score += Math.min(
-        numbers.length * 3,
-        30
-    );
+
+    // Alphabetic words
+
+    const words =
+        text.match(/[A-Za-z]{3,}/g) || [];
+
+    score +=
+        Math.min(
+            words.length * 2,
+            80
+        );
 
 
-    // --------------------------------------------------
-    // SIZE PATTERN BONUS
-    // --------------------------------------------------
+    // MRP pattern
+
+    if (
+        /M\s*\.?\s*R\s*\.?\s*P/i.test(text)
+    ) {
+
+        score += 50;
+
+    }
+
+
+    // Pages
+
+    if (
+        /PAGES?\s*[:.\-]?\s*\d+/i.test(text)
+    ) {
+
+        score += 50;
+
+    }
+
+
+    // Size
 
     if (
         /\d+(?:\.\d+)?\s*CM\s*[Xx×]\s*\d+(?:\.\d+)?\s*CM/i.test(text)
+    ) {
+
+        score += 70;
+
+    }
+
+
+    // Manufacturer
+
+    if (
+        /MANUFACTURED|MANUFACTURER|MARKETED|INDUSTRIES/i.test(text)
     ) {
 
         score += 40;
@@ -242,52 +192,7 @@ function calculateOCRScore(text) {
     }
 
 
-    // --------------------------------------------------
-    // MRP PATTERN BONUS
-    // --------------------------------------------------
-
-    if (
-        /M\s*\.?\s*R\s*\.?\s*P/i.test(text)
-    ) {
-
-        score += 20;
-
-    }
-
-
-    // --------------------------------------------------
-    // PAGES PATTERN BONUS
-    // --------------------------------------------------
-
-    if (
-        /PAGES?\s*[:.\-]?\s*\d+/i.test(text)
-    ) {
-
-        score += 20;
-
-    }
-
-
-    // --------------------------------------------------
-    // TEXT LENGTH
-    // --------------------------------------------------
-
-    if (text.length > 100) {
-
-        score += 10;
-
-    }
-
-
-    if (text.length > 300) {
-
-        score += 10;
-
-    }
-
-
     return score;
-
 }
 
 
@@ -297,76 +202,54 @@ function calculateOCRScore(text) {
 
 async function extractText(imageBuffer) {
 
-    console.log("Preparing image...");
+    console.log("");
+    console.log("======================================");
+    console.log("LABELGUARD AI OCR");
+    console.log("======================================");
 
 
     const worker =
         await createWorker("eng");
 
 
-    // ==================================================
-    // TESSERACT SETTINGS
-    // ==================================================
+    try {
 
-    await worker.setParameters({
+        // ------------------------------------------------
+        // TESSERACT SETTINGS
+        // ------------------------------------------------
 
-        tessedit_pageseg_mode: "6",
+        await worker.setParameters({
 
-        preserve_interword_spaces: "1",
+            tessedit_pageseg_mode: "6",
 
-        tessedit_char_whitelist:
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789₹./:-()%&,@+×x "
+            preserve_interword_spaces: "1"
 
-    });
-
-
-    // ==================================================
-    // OCR ANGLES
-    // ==================================================
-
-    const angles = [
-
-        0,
-        90,
-        180,
-        270
-
-    ];
+        });
 
 
-    // ==================================================
-    // IMAGE MODES
-    // ==================================================
+        // ------------------------------------------------
+        // TRY ALL ROTATIONS
+        // ------------------------------------------------
 
-    const modes = [
-
-        "normal",
-        "contrast",
-        "threshold",
-        "sharp"
-
-    ];
+        const angles = [
+            0,
+            90,
+            180,
+            270
+        ];
 
 
-    let bestText = "";
-
-    let bestScore = -1;
-
-    let bestAngle = 0;
-
-    let bestMode = "normal";
+        let bestText = "";
+        let bestScore = -1;
+        let bestAngle = 0;
 
 
-    // ==================================================
-    // OCR PASSES
-    // ==================================================
+        for (const angle of angles) {
 
-    for (const angle of angles) {
-
-        for (const mode of modes) {
-
+            console.log("");
             console.log(
-                `OCR pass: ${angle}° | ${mode}`
+                "OCR rotation:",
+                angle
             );
 
 
@@ -375,8 +258,7 @@ async function extractText(imageBuffer) {
                 const processedImage =
                     await prepareImage(
                         imageBuffer,
-                        angle,
-                        mode
+                        angle
                     );
 
 
@@ -386,41 +268,64 @@ async function extractText(imageBuffer) {
                     );
 
 
-                let text =
-                    result.data.text || "";
-
-
-                text =
-                    cleanOCRText(text);
+                const text =
+                    cleanText(
+                        result.data.text
+                    );
 
 
                 const score =
-                    calculateOCRScore(text);
+                    scoreOCR(text);
 
 
                 console.log(
-                    `Pass ${angle}° | ${mode} | score: ${score} | length: ${text.length}`
+                    "Rotation:",
+                    angle
+                );
+
+                console.log(
+                    "Score:",
+                    score
+                );
+
+                console.log(
+                    "Text length:",
+                    text.length
+                );
+
+
+                console.log(
+                    "OCR preview:"
+                );
+
+                console.log(
+                    text.substring(
+                        0,
+                        500
+                    )
                 );
 
 
                 if (score > bestScore) {
 
-                    bestScore = score;
+                    bestScore =
+                        score;
 
-                    bestText = text;
+                    bestText =
+                        text;
 
-                    bestAngle = angle;
-
-                    bestMode = mode;
+                    bestAngle =
+                        angle;
 
                 }
 
-
             }
+
             catch (error) {
 
                 console.error(
-                    `OCR pass ${angle}° | ${mode} failed:`,
+                    "OCR rotation failed:",
+                    angle,
                     error.message
                 );
 
@@ -428,49 +333,48 @@ async function extractText(imageBuffer) {
 
         }
 
+
+        // ------------------------------------------------
+        // FINAL RESULT
+        // ------------------------------------------------
+
+        console.log("");
+        console.log(
+            "======================================"
+        );
+
+        console.log(
+            "BEST OCR ROTATION:",
+            bestAngle
+        );
+
+        console.log(
+            "BEST OCR SCORE:",
+            bestScore
+        );
+
+        console.log(
+            "======================================"
+        );
+
+        console.log(
+            bestText
+        );
+
+        console.log(
+            "======================================"
+        );
+
+
+        return bestText;
+
     }
 
+    finally {
 
-    // ==================================================
-    // TERMINATE WORKER
-    // ==================================================
+        await worker.terminate();
 
-    await worker.terminate();
-
-
-    // ==================================================
-    // RESULT
-    // ==================================================
-
-    console.log(
-        "================================="
-    );
-
-    console.log(
-        "Best OCR angle:",
-        bestAngle + "°"
-    );
-
-    console.log(
-        "Best OCR mode:",
-        bestMode
-    );
-
-    console.log(
-        "Best OCR score:",
-        bestScore
-    );
-
-    console.log(
-        "OCR processing completed!"
-    );
-
-    console.log(
-        "================================="
-    );
-
-
-    return bestText;
+    }
 
 }
 

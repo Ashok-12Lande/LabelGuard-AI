@@ -1,4 +1,17 @@
+// ======================================================
+// LABELGUARD AI - PRODUCT INFORMATION EXTRACTOR
+// ======================================================
+
+
+// ======================================================
+// NORMALIZE TEXT
+// ======================================================
+
 function normalizeText(text) {
+
+    if (!text) {
+        return "";
+    }
 
     return text
         .replace(/\r/g, "")
@@ -8,34 +21,64 @@ function normalizeText(text) {
 }
 
 
+// ======================================================
+// PRODUCT INFORMATION EXTRACTION
+// ======================================================
+
 function extractProductInfo(rawText) {
 
-    const text = normalizeText(rawText);
+    rawText = rawText || "";
+
+    const text =
+        normalizeText(rawText);
 
 
-    // ======================================================
+    const upperText =
+        text.toUpperCase();
+
+
+    // ==================================================
     // PRODUCT CATEGORY
-    // ======================================================
+    // ==================================================
 
     let category = "Unknown";
 
 
+    // Stationery
+
     if (
-        /notebook|exercise\s*book|pages|page\s*no|stationery/i.test(text)
+        /NOTEBOOK/i.test(text) ||
+        /EXERCISE/i.test(text) ||
+        /PAGES?\s*[:.]?\s*\d+/i.test(text) ||
+        /SIZE\s*[:.]?\s*\d+.*CM/i.test(text)
     ) {
 
         category = "Stationery";
 
     }
+
+
+    // Food
+
     else if (
-        /fssai|ingredients|nutrition|net\s*(weight|quantity)|best\s*before/i.test(text)
+        /FSSAI/i.test(text) ||
+        /INGREDIENTS/i.test(text) ||
+        /NUTRITION/i.test(text) ||
+        /NET\s*(WEIGHT|QUANTITY)/i.test(text) ||
+        /BEST\s*BEFORE/i.test(text)
     ) {
 
         category = "Food";
 
     }
+
+
+    // Cosmetics
+
     else if (
-        /cosmetic|ingredients|manufactured\s*by|batch\s*no/i.test(text)
+        /COSMETIC/i.test(text) ||
+        /BATCH\s*NO/i.test(text) ||
+        /MANUFACTURED\s*BY/i.test(text)
     ) {
 
         category = "Cosmetics";
@@ -43,105 +86,209 @@ function extractProductInfo(rawText) {
     }
 
 
-    // ======================================================
+    // ==================================================
     // PRODUCT NAME
-    // ======================================================
+    // ==================================================
 
     let productName = "Not detected";
 
 
-    if (/parle[\s-]*g/i.test(text)) {
+    // Exact known product
+
+    if (/PARLE[\s-]*G/i.test(text)) {
 
         productName = "Parle-G Biscuits";
 
     }
-    else if (/exercise[\s\n]+notebook/i.test(rawText)) {
+
+
+    // Exercise Notebook
+    // Handles OCR spaces/newlines between words
+
+    else if (
+        /EXERCISE[\s\S]{0,40}NOTE[\s\S]{0,40}BOOK/i.test(rawText) ||
+        /EXERCISE[\s\S]{0,40}NOTEBOOK/i.test(rawText)
+    ) {
 
         productName = "Exercise Notebook";
 
     }
-    else if (/notebook/i.test(text)) {
+
+
+    // If OCR separates NOTE and BOOK
+
+    else if (
+        /EXERCISE/i.test(text) &&
+        /NOTE/i.test(text) &&
+        /BOOK/i.test(text)
+    ) {
+
+        productName = "Exercise Notebook";
+
+    }
+
+
+    // Normal notebook
+
+    else if (/NOTEBOOK/i.test(text)) {
 
         productName = "Notebook";
 
     }
 
 
-    // ======================================================
+    // ==================================================
     // MRP
-    // ======================================================
+    // ==================================================
 
     let mrp = "Not detected";
 
 
-    const mrpMatch = rawText.match(
-        /M\s*\.?\s*R\s*\.?\s*P\s*\.?\s*[A-Z₹RsINR:.\- ]{0,15}(\d+(?:\.\d+)?)\s*(?:\/\s*-)?/i
-    );
+    /*
+        IMPORTANT:
+
+        OCR may read:
+
+        M.R.P. ₹ 85/-
+
+        as:
+
+        M.R.P.3 : 85/-
+
+        Therefore we should NOT simply take the
+        first number after MRP.
+
+        We first look for the number after ':'.
+    */
+
+
+    let mrpMatch =
+        rawText.match(
+            /M\s*\.?\s*R\s*\.?\s*P\s*\.?\s*[^\d\n]{0,15}[:]\s*(\d+(?:\.\d+)?)\s*(?:\/\s*-)?/i
+        );
 
 
     if (mrpMatch) {
 
-        mrp = `₹ ${mrpMatch[1]}`;
+        mrp =
+            `₹ ${mrpMatch[1]}`;
 
     }
 
 
-    // Backup MRP detection
+    // ----------------------------------------------
+    // MRP with ₹ / Rs / INR
+    // ----------------------------------------------
 
     if (mrp === "Not detected") {
 
-        const backupMrp = rawText.match(
-            /(?:M\.?\s*R\.?\s*P\.?|MRP)[^0-9]{0,20}(\d+(?:\.\d+)?)\s*(?:\/-)?/i
-        );
+        mrpMatch =
+            rawText.match(
+                /M\s*\.?\s*R\s*\.?\s*P\s*\.?\s*(?:₹|RS|INR)?\s*(\d+(?:\.\d+)?)\s*(?:\/\s*-)/i
+            );
 
 
-        if (backupMrp) {
+        if (mrpMatch) {
 
-            mrp = `₹ ${backupMrp[1]}`;
+            mrp =
+                `₹ ${mrpMatch[1]}`;
 
         }
 
     }
 
 
-    // ======================================================
-    // PAGES
-    // ======================================================
+    // ----------------------------------------------
+    // MRP followed by colon somewhere
+    // ----------------------------------------------
 
-    let pages = "Not detected";
+    if (mrp === "Not detected") {
+
+        mrpMatch =
+            rawText.match(
+                /M\s*\.?\s*R\s*\.?\s*P[\s\S]{0,30}?:\s*(\d+(?:\.\d+)?)/i
+            );
 
 
-    const pagesMatch = rawText.match(
-        /PAGES?\s*[:.\-]?\s*(\d+)/i
-    );
+        if (mrpMatch) {
 
+            mrp =
+                `₹ ${mrpMatch[1]}`;
 
-    if (pagesMatch) {
-
-        pages = pagesMatch[1];
+        }
 
     }
 
 
-    // ======================================================
+    // ----------------------------------------------
+    // Final MRP backup
+    // ----------------------------------------------
+
+    if (mrp === "Not detected") {
+
+        mrpMatch =
+            rawText.match(
+                /(?:MRP|M\.R\.P\.?)[^\d]{0,20}(\d+(?:\.\d+)?)\s*\/\s*-/i
+            );
+
+
+        if (mrpMatch) {
+
+            mrp =
+                `₹ ${mrpMatch[1]}`;
+
+        }
+
+    }
+
+
+    // ==================================================
+    // PAGES
+    // ==================================================
+
+    let pages = "Not detected";
+
+
+    const pagesMatch =
+        rawText.match(
+            /PAGES?\s*[:.\-]?\s*(\d+)/i
+        );
+
+
+    if (pagesMatch) {
+
+        pages =
+            pagesMatch[1];
+
+    }
+
+
+    // ==================================================
     // SIZE
-    // ======================================================
+    // ==================================================
 
     let size = "Not detected";
 
 
     const sizePatterns = [
 
-        // SIZE: 21 CM X 29.7 CM
+        // SIZE : 21 CM X 29.7 CM
+
         /SIZE\s*[:.\-]?\s*(\d+(?:\.\d+)?)\s*CM\s*[Xx×]\s*(\d+(?:\.\d+)?)\s*CM/i,
 
-        // SIZE 21 X 29.7 CM
+
+        // SIZE : 21 X 29.7 CM
+
         /SIZE\s*[:.\-]?\s*(\d+(?:\.\d+)?)\s*[Xx×]\s*(\d+(?:\.\d+)?)\s*CM/i,
 
+
         // 21 CM X 29.7 CM
+
         /(\d+(?:\.\d+)?)\s*CM\s*[Xx×]\s*(\d+(?:\.\d+)?)\s*CM/i,
 
-        // 21 X 29.7
+
+        // SIZE : 21 X 29.7
+
         /SIZE\s*[:.\-]?\s*(\d+(?:\.\d+)?)\s*[Xx×]\s*(\d+(?:\.\d+)?)/i
 
     ];
@@ -149,7 +296,8 @@ function extractProductInfo(rawText) {
 
     for (const pattern of sizePatterns) {
 
-        const match = rawText.match(pattern);
+        const match =
+            rawText.match(pattern);
 
 
         if (match) {
@@ -164,22 +312,25 @@ function extractProductInfo(rawText) {
     }
 
 
-    // ======================================================
+    // ==================================================
     // NET QUANTITY
-    // ======================================================
+    // ==================================================
 
     let netQuantity = "Not detected";
 
 
     const isNotebook =
-        /notebook/i.test(text);
+        /NOTEBOOK|EXERCISE/i.test(text);
 
+
+    // Not normally required for notebook
 
     if (!isNotebook) {
 
-        const quantityMatch = rawText.match(
-            /(?:NET\s*(?:WEIGHT|WT|QTY|QUANTITY))\s*[:.]?\s*(\d+(?:\.\d+)?)\s*(KG|G|GM|ML|L|PCS|PIECES|PACK)/i
-        );
+        const quantityMatch =
+            rawText.match(
+                /(?:NET\s*(?:WEIGHT|WT|QTY|QUANTITY))\s*[:.]?\s*(\d+(?:\.\d+)?)\s*(KG|G|GM|ML|L|PCS|PIECES|PACK)/i
+            );
 
 
         if (quantityMatch) {
@@ -192,76 +343,87 @@ function extractProductInfo(rawText) {
     }
 
 
-    // ======================================================
+    // ==================================================
     // BEST BEFORE / EXPIRY
-    // ======================================================
+    // ==================================================
 
     let bestBefore = "Not detected";
 
 
-    const expiryMatch = rawText.match(
-        /(?:BEST\s*BEFORE|USE\s*BY|EXPIRY|EXP\.?\s*DATE)\s*[:.]?\s*([A-Za-z0-9\/.\- ]{3,30})/i
-    );
+    const expiryMatch =
+        rawText.match(
+            /(?:BEST\s*BEFORE|USE\s*BY|EXPIRY|EXP\.?\s*DATE)\s*[:.]?\s*([A-Za-z0-9\/.\- ]{3,30})/i
+        );
 
 
     if (expiryMatch) {
 
         bestBefore =
-            expiryMatch[1].trim();
+            expiryMatch[1]
+                .trim();
 
     }
 
 
-    // ======================================================
+    // ==================================================
     // BATCH NUMBER
-    // ======================================================
+    // ==================================================
 
     let batchNumber = "Not detected";
 
 
-    const batchMatch = rawText.match(
-        /(?:BATCH\s*(?:NO|NUMBER)?|LOT\s*(?:NO|NUMBER)?)\s*[:.#-]?\s*([A-Z0-9\/-]{2,30})/i
-    );
+    const batchMatch =
+        rawText.match(
+            /(?:BATCH\s*(?:NO|NUMBER)?|LOT\s*(?:NO|NUMBER)?)\s*[:.#-]?\s*([A-Z0-9\/-]{2,30})/i
+        );
 
 
     if (batchMatch) {
 
         batchNumber =
-            batchMatch[1].trim();
+            batchMatch[1]
+                .trim();
 
     }
 
 
-    // ======================================================
+    // ==================================================
     // FSSAI
-    // ======================================================
+    // ==================================================
 
     let fssai = "Not detected";
 
 
-    const fssaiMatch = rawText.match(
-        /(?:FSSAI|LIC\.?\s*NO\.?|LICENSE\s*NO\.?)\s*[:.]?\s*(\d{8,14})/i
-    );
+    const fssaiMatch =
+        rawText.match(
+            /(?:FSSAI|LIC\.?\s*NO\.?|LICENSE\s*NO\.?)\s*[:.]?\s*(\d{8,14})/i
+        );
 
 
     if (fssaiMatch) {
 
-        fssai = fssaiMatch[1];
+        fssai =
+            fssaiMatch[1];
 
     }
+
     else if (/FSSAI/i.test(rawText)) {
 
-        fssai = "Detected";
+        fssai =
+            "Detected";
 
     }
 
 
-    // ======================================================
+    // ==================================================
     // MANUFACTURER
-    // ======================================================
+    // ==================================================
 
-    let manufacturer = "Not detected";
+    let manufacturer =
+        "Not detected";
 
+
+    // Known manufacturer
 
     if (/REEGAL\s+INDUSTRIES/i.test(rawText)) {
 
@@ -269,11 +431,14 @@ function extractProductInfo(rawText) {
             "Reegal Industries";
 
     }
+
+
     else {
 
-        const manufacturerMatch = rawText.match(
-            /(?:MANUFACTURED\s*(?:FOR|BY)?|MARKETED\s*BY|MANUFACTURER)\s*[:.]?\s*([A-Z][A-Z\s&.,'-]{3,80})/i
-        );
+        const manufacturerMatch =
+            rawText.match(
+                /(?:MANUFACTURED\s*(?:FOR|BY)?|MARKETED\s*BY|MANUFACTURER)\s*[:.]?\s*([A-Z][A-Z\s&.,'-]{3,80})/i
+            );
 
 
         if (manufacturerMatch) {
@@ -297,9 +462,9 @@ function extractProductInfo(rawText) {
     }
 
 
-    // ======================================================
+    // ==================================================
     // RETURN PRODUCT INFORMATION
-    // ======================================================
+    // ==================================================
 
     return {
 
@@ -327,6 +492,10 @@ function extractProductInfo(rawText) {
 
 }
 
+
+// ======================================================
+// EXPORT
+// ======================================================
 
 module.exports = {
 
